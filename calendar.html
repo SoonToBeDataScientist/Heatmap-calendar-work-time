@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Lampu Belajar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F6FB;
+    --surface: #FFFFFF;
+    --surface-2: #EAEDF6;
+    --text: #161A2E;
+    --text-muted: #5B6180;
+    --accent: #C97F13;
+    --accent-contrast: #241300;
+    --accent-glow: rgba(201,127,19,0.28);
+    --border: #E1E5F0;
+    --heat-1: #F6DFAE;
+    --heat-2: #EFC178;
+    --heat-3: #E2A048;
+    --heat-4: #C97F13;
+    --shadow: 0 1px 2px rgba(30,30,60,0.05), 0 10px 28px -14px rgba(30,30,60,0.18);
+    --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --cell-size: 12px;
+    --cell-gap: 3px;
+  }
+
+  @media (min-width: 640px) {
+    :root { --cell-size: 13px; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1226;
+      --surface: #171B34;
+      --surface-2: #1F2444;
+      --text: #EDEFFA;
+      --text-muted: #8D93B8;
+      --accent: #F2A93C;
+      --accent-contrast: #241300;
+      --accent-glow: rgba(242,169,60,0.45);
+      --border: #262B4D;
+      --heat-1: #4A3A22;
+      --heat-2: #7A5C28;
+      --heat-3: #B8862C;
+      --heat-4: #F2A93C;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 28px -14px rgba(0,0,0,0.55);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0E1226;
+    --surface: #171B34;
+    --surface-2: #1F2444;
+    --text: #EDEFFA;
+    --text-muted: #8D93B8;
+    --accent: #F2A93C;
+    --accent-contrast: #241300;
+    --accent-glow: rgba(242,169,60,0.45);
+    --border: #262B4D;
+    --heat-1: #4A3A22;
+    --heat-2: #7A5C28;
+    --heat-3: #B8862C;
+    --heat-4: #F2A93C;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 28px -14px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .page { max-width: 760px; margin: 0 auto; padding: 40px 20px 72px; }
+
+  .hero { text-align: center; margin-bottom: 32px; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.7rem, 4.5vw, 2.3rem);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .hero .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 auto;
+    max-width: 420px;
+  }
+
+  .timer-card {
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 15%, var(--accent-glow), transparent 65%),
+      var(--surface);
+    border-radius: 28px;
+    padding: 40px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.4s ease;
+  }
+  .timer-card.is-running { box-shadow: 0 0 70px -18px var(--accent-glow), var(--shadow); }
+
+  .ring-wrap { position: relative; width: min(250px, 60vw); aspect-ratio: 1 / 1; }
+  .ring-svg { width: 100%; height: 100%; display: block; }
+  .ring-track { fill: none; stroke: var(--surface-2); stroke-width: 14; }
+  .ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-dasharray: 597;
+    stroke-dashoffset: 597;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+    transition: stroke-dashoffset 0.35s ease, filter 0.4s ease;
+  }
+  .timer-card.is-running .ring-progress { filter: drop-shadow(0 0 10px var(--accent-glow)); }
+
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  }
+  .time-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.3rem, 10vw, 3.2rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .status-label { font-size: 14px; color: var(--text-muted); }
+
+  .presets { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .chip {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .chip.active { background: var(--accent); color: var(--accent-contrast); }
+  .chip:hover:not(.active) { border-color: var(--border); }
+  .chip:focus-visible, .btn:focus-visible, .heat-cell:focus-visible, .text-link:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  .custom-input-wrap { display: flex; align-items: center; }
+  #customMinutes {
+    width: 84px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+  #customMinutes::-webkit-outer-spin-button,
+  #customMinutes::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #customMinutes { -moz-appearance: textfield; }
+
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 30px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: var(--accent-contrast); }
+  .btn-secondary { background: var(--surface-2); color: var(--text); }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn:hover { opacity: 0.9; }
+
+  .stats-row {
+    display: flex;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 4px;
+    margin: 32px 0;
+  }
+  .stat-tile { flex: 1; text-align: center; }
+  .stat-value {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.05rem, 3vw, 1.4rem);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .stat-label { font-size: 12.5px; color: var(--text-muted); margin-top: 5px; }
+  @media (max-width: 480px) {
+    .stats-row { flex-wrap: wrap; row-gap: 20px; }
+    .stat-tile { flex: 0 0 50%; }
+  }
+
+  .heatmap-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  .heatmap-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .heatmap-header h2 { font-family: var(--font-body); font-size: 17px; font-weight: 600; margin: 0; }
+  .header-actions { display: flex; gap: 16px; }
+
+  .heatmap-wrap { display: flex; align-items: flex-start; gap: 8px; }
+  .heatmap-daylabels {
+    display: flex; flex-direction: column; gap: var(--cell-gap);
+    flex-shrink: 0; padding-top: 20px;
+  }
+  .day-label { height: var(--cell-size); font-size: 11px; line-height: var(--cell-size); color: var(--text-muted); }
+
+  .heatmap-scroll { overflow-x: auto; flex: 1; padding-bottom: 4px; }
+  .heatmap-months {
+    display: grid; grid-auto-flow: column; grid-auto-columns: var(--cell-size);
+    gap: var(--cell-gap); height: 16px; margin-bottom: 4px;
+  }
+  .month-label { font-size: 11px; line-height: 16px; color: var(--text-muted); }
+  .heatmap-grid {
+    display: grid; grid-auto-flow: column;
+    grid-template-rows: repeat(7, var(--cell-size));
+    grid-auto-columns: var(--cell-size); gap: var(--cell-gap);
+  }
+  .heat-cell {
+    width: var(--cell-size); height: var(--cell-size);
+    border-radius: 3px; border: none; padding: 0; cursor: pointer;
+    background: var(--surface-2);
+  }
+  .heat-cell.level-1 { background: var(--heat-1); }
+  .heat-cell.level-2 { background: var(--heat-2); }
+  .heat-cell.level-3 { background: var(--heat-3); }
+  .heat-cell.level-4 { background: var(--heat-4); }
+
+  .heatmap-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 18px; flex-wrap: wrap; gap: 10px;
+  }
+  .legend { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-muted); }
+  .legend-cell { width: var(--cell-size); height: var(--cell-size); border-radius: 3px; display: inline-block; background: var(--surface-2); }
+  .legend-cell.level-1 { background: var(--heat-1); }
+  .legend-cell.level-2 { background: var(--heat-2); }
+  .legend-cell.level-3 { background: var(--heat-3); }
+  .legend-cell.level-4 { background: var(--heat-4); }
+  .text-link {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 12.5px; text-decoration: underline; cursor: pointer;
+    font-family: var(--font-body); padding: 4px;
+  }
+  .text-link:hover { color: var(--text); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 10px);
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    padding: 12px 20px; border-radius: 12px; box-shadow: var(--shadow);
+    font-size: 14px; opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 50; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .tooltip {
+    position: fixed; background: var(--text); color: var(--bg);
+    font-size: 12.5px; padding: 6px 10px; border-radius: 8px;
+    pointer-events: none; white-space: nowrap; z-index: 60;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <h1>Lampu Belajar</h1>
+    <p class="subtitle">Timer fokus buat sesi belajarmu, lengkap dengan jejak progress harian biar makin semangat.</p>
+  </header>
+
+  <section class="timer-card" id="timerCard">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 220 220" class="ring-svg">
+        <circle class="ring-track" cx="110" cy="110" r="95"></circle>
+        <circle class="ring-progress" id="ringProgress" cx="110" cy="110" r="95"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="time-display" id="timeDisplay">25:00</div>
+        <div class="status-label" id="statusLabel">Siap mulai</div>
+      </div>
+    </div>
+
+    <div class="presets">
+      <button type="button" class="chip active" data-minutes="25">25 menit</button>
+      <button type="button" class="chip" data-minutes="45">45 menit</button>
+      <button type="button" class="chip" data-minutes="60">60 menit</button>
+      <button type="button" class="chip" id="customChip">Custom</button>
+      <div class="custom-input-wrap" id="customInputWrap" hidden>
+        <input type="number" id="customMinutes" min="1" max="180" placeholder="menit" aria-label="Durasi custom dalam menit">
+      </div>
+    </div>
+
+    <div class="controls">
+      <button type="button" class="btn btn-primary" id="startBtn">Mulai</button>
+      <button type="button" class="btn btn-secondary" id="pauseBtn" hidden>Jeda</button>
+      <button type="button" class="btn btn-secondary" id="resumeBtn" hidden>Lanjut</button>
+      <button type="button" class="btn btn-ghost" id="stopBtn" hidden>Selesai</button>
+    </div>
+  </section>
+
+  <section class="stats-row">
+    <div class="stat-tile">
+      <div class="stat-value" id="statToday">0 menit</div>
+      <div class="stat-label">Hari ini</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" id="statStreak">0 hari</div>
+      <div class="stat-label">Beruntun</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" id="statBest">0 hari</div>
+      <div class="stat-label">Rekor beruntun</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" id="statTotal">0 menit</div>
+      <div class="stat-label">Total belajar</div>
+    </div>
+  </section>
+
+  <section class="heatmap-card">
+    <div class="heatmap-header">
+      <h2>Riwayat Belajar</h2>
+      <div class="header-actions">
+        <button type="button" class="text-link" id="exportBtn">Export</button>
+        <button type="button" class="text-link" id="importBtn">Import</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+    </div>
+
+    <div class="heatmap-wrap">
+      <div class="heatmap-daylabels" id="heatmapDayLabels"></div>
+      <div class="heatmap-scroll" id="heatmapScroll">
+        <div class="heatmap-months" id="heatmapMonths"></div>
+        <div class="heatmap-grid" id="heatmapGrid"></div>
+      </div>
+    </div>
+
+    <div class="heatmap-footer">
+      <div class="legend">
+        <span>Sedikit</span>
+        <span class="legend-cell"></span>
+        <span class="legend-cell level-1"></span>
+        <span class="legend-cell level-2"></span>
+        <span class="legend-cell level-3"></span>
+        <span class="legend-cell level-4"></span>
+        <span>Banyak</span>
+      </div>
+      <button type="button" class="text-link" id="resetBtn">Reset riwayat</button>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<div class="tooltip" id="tooltip" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var RADIUS = 95;
+  var CIRC = 2 * Math.PI * RADIUS;
+  var DAY_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+  var SHOW_LABEL = [true, false, true, false, true, false, false];
+  var MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  var DAY_NAMES_FULL = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  var STORAGE_KEY = 'lampuBelajar_history_v1';
+
+  var timerCard = document.getElementById('timerCard');
+  var ringProgress = document.getElementById('ringProgress');
+  var timeDisplay = document.getElementById('timeDisplay');
+  var statusLabel = document.getElementById('statusLabel');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip[data-minutes]'));
+  var customChip = document.getElementById('customChip');
+  var customInputWrap = document.getElementById('customInputWrap');
+  var customInput = document.getElementById('customMinutes');
+  var startBtn = document.getElementById('startBtn');
+  var pauseBtn = document.getElementById('pauseBtn');
+  var resumeBtn = document.getElementById('resumeBtn');
+  var stopBtn = document.getElementById('stopBtn');
+  var statToday = document.getElementById('statToday');
+  var statStreak = document.getElementById('statStreak');
+  var statBest = document.getElementById('statBest');
+  var statTotal = document.getElementById('statTotal');
+  var heatmapGrid = document.getElementById('heatmapGrid');
+  var heatmapMonths = document.getElementById('heatmapMonths');
+  var heatmapDayLabels = document.getElementById('heatmapDayLabels');
+  var heatmapScroll = document.getElementById('heatmapScroll');
+  var resetBtn = document.getElementById('resetBtn');
+  var exportBtn = document.getElementById('exportBtn');
+  var importBtn = document.getElementById('importBtn');
+  var importFile = document.getElementById('importFile');
+  var toastEl = document.getElementById('toast');
+  var tooltipEl = document.getElementById('tooltip');
+
+  var status = 'idle';
+  var selectedMinutes = 25;
+  var durationSec = selectedMinutes * 60;
+  var remainingSec = durationSec;
+  var endTimestamp = null;
+  var tickHandle = null;
+  var historyData = {};
+  var toastTimeout = null;
+
+  function dateKey(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  function shiftDateStr(key, deltaDays) {
+    var parts = key.split('-').map(Number);
+    var dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() + deltaDays);
+    return dateKey(dt);
+  }
+  function mondayIndex(date) {
+    return (date.getDay() + 6) % 7;
+  }
+  function formatMMSS(totalSec) {
+    var m = Math.floor(totalSec / 60);
+    var s = totalSec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  function formatMinutesLong(min) {
+    min = Math.round(min);
+    if (min < 60) return min + ' menit';
+    var h = Math.floor(min / 60);
+    var m = min % 60;
+    return m > 0 ? (h + ' jam ' + m + ' menit') : (h + ' jam');
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    requestAnimationFrame(function () { toastEl.classList.add('show'); });
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function () {
+      toastEl.classList.remove('show');
+      setTimeout(function () { toastEl.hidden = true; }, 300);
+    }, 3500);
+  }
+
+  function tooltipText(date, minutes) {
+    var dayName = DAY_NAMES_FULL[date.getDay()];
+    var d = date.getDate();
+    var m = MONTH_LABELS[date.getMonth()];
+    var y = date.getFullYear();
+    var suffix = minutes > 0 ? formatMinutesLong(minutes) : 'belum ada sesi';
+    return dayName + ', ' + d + ' ' + m + ' ' + y + ' — ' + suffix;
+  }
+  function showTooltip(evt, date, minutes) {
+    tooltipEl.textContent = tooltipText(date, minutes);
+    tooltipEl.hidden = false;
+    var rect = evt.currentTarget.getBoundingClientRect();
+    var top = Math.max(8, rect.top - 8);
+    var left = rect.left + rect.width / 2;
+    tooltipEl.style.top = top + 'px';
+    tooltipEl.style.left = left + 'px';
+    tooltipEl.style.transform = 'translate(-50%, -100%)';
+  }
+  function hideTooltip() { tooltipEl.hidden = true; }
+  document.addEventListener('click', function (e) {
+    if (!(e.target instanceof Element) || !e.target.classList.contains('heat-cell')) {
+      hideTooltip();
+    }
+  });
+
+  function updateDisplay() {
+    timeDisplay.textContent = formatMMSS(remainingSec);
+    var progress = durationSec > 0 ? 1 - (remainingSec / durationSec) : 0;
+    var offset = CIRC * (1 - progress);
+    ringProgress.style.strokeDashoffset = offset.toFixed(2);
+    document.title = status === 'running' ? (timeDisplay.textContent + ' • Lampu Belajar') : 'Lampu Belajar';
+  }
+
+  function resetDisplayIdle() {
+    durationSec = selectedMinutes * 60;
+    remainingSec = durationSec;
+    timeDisplay.textContent = formatMMSS(remainingSec);
+    ringProgress.style.strokeDashoffset = CIRC.toFixed(2);
+    statusLabel.textContent = 'Siap mulai';
+    document.title = 'Lampu Belajar';
+  }
+
+  function updateControlsUI() {
+    startBtn.hidden = status !== 'idle';
+    pauseBtn.hidden = status !== 'running';
+    resumeBtn.hidden = status !== 'paused';
+    stopBtn.hidden = status === 'idle';
+  }
+
+  function tick() {
+    if (status !== 'running') return;
+    var msLeft = endTimestamp - Date.now();
+    remainingSec = Math.max(0, Math.round(msLeft / 1000));
+    updateDisplay();
+    if (remainingSec <= 0) completeSession();
+  }
+
+  function startTimer(minutes) {
+    if (status !== 'idle') return;
+    durationSec = Math.round(minutes * 60);
+    remainingSec = durationSec;
+    endTimestamp = Date.now() + remainingSec * 1000;
+    status = 'running';
+    statusLabel.textContent = 'Fokus jalan…';
+    timerCard.classList.add('is-running');
+    updateDisplay();
+    tickHandle = setInterval(tick, 1000);
+    updateControlsUI();
+  }
+
+  function pauseTimer() {
+    if (status !== 'running') return;
+    clearInterval(tickHandle);
+    remainingSec = Math.max(0, Math.round((endTimestamp - Date.now()) / 1000));
+    status = 'paused';
+    statusLabel.textContent = 'Dijeda';
+    timerCard.classList.remove('is-running');
+    updateDisplay();
+    updateControlsUI();
+  }
+
+  function resumeTimer() {
+    if (status !== 'paused') return;
+    endTimestamp = Date.now() + remainingSec * 1000;
+    status = 'running';
+    statusLabel.textContent = 'Fokus jalan…';
+    timerCard.classList.add('is-running');
+    tickHandle = setInterval(tick, 1000);
+    updateControlsUI();
+  }
+
+  function stopTimer() {
+    if (status === 'idle') return;
+    clearInterval(tickHandle);
+    var elapsedSec = durationSec - remainingSec;
+    var elapsedMin = Math.round(elapsedSec / 60);
+    status = 'idle';
+    timerCard.classList.remove('is-running');
+    if (elapsedMin >= 1) {
+      logStudyMinutes(elapsedMin);
+      showToast('Sesi dicatat — ' + elapsedMin + ' menit ditambahkan ke riwayat.');
+    } else {
+      showToast('Sesi kelewat singkat, jadi belum dicatat.');
+    }
+    resetDisplayIdle();
+    updateControlsUI();
+  }
+
+  function completeSession() {
+    clearInterval(tickHandle);
+    status = 'idle';
+    timerCard.classList.remove('is-running');
+    var elapsedMin = Math.round(durationSec / 60);
+    logStudyMinutes(elapsedMin);
+    playChime();
+    statusLabel.textContent = 'Selesai! 🎉';
+    timeDisplay.textContent = '00:00';
+    ringProgress.style.strokeDashoffset = '0';
+    document.title = 'Lampu Belajar';
+    showToast('Mantap! ' + elapsedMin + ' menit belajar tercatat.');
+    updateControlsUI();
+    setTimeout(resetDisplayIdle, 3000);
+  }
+
+  function playChime() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      var now = ctx.currentTime;
+      var notes = [659.25, 830.61, 987.77];
+      notes.forEach(function (freq, i) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        var t0 = now + i * 0.16;
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(0.18, t0 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.4);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.45);
+      });
+      setTimeout(function () { ctx.close(); }, 1200);
+    } catch (e) { console.warn('chime failed', e); }
+  }
+
+  function logStudyMinutes(minutes) {
+    var key = dateKey(new Date());
+    historyData[key] = (historyData[key] || 0) + minutes;
+    persistHistory();
+    renderHeatmap();
+    renderStats();
+  }
+
+  function computeCurrentStreak(history) {
+    var cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    if (!(history[dateKey(cursor)] > 0)) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    var streak = 0;
+    while (history[dateKey(cursor)] > 0) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function computeLongestStreak(history) {
+    var activeDays = Object.keys(history).filter(function (k) { return history[k] > 0; });
+    var daySet = new Set(activeDays);
+    var longest = 0;
+    activeDays.forEach(function (k) {
+      var prevKey = shiftDateStr(k, -1);
+      if (!daySet.has(prevKey)) {
+        var len = 1;
+        var cur = k;
+        while (daySet.has(shiftDateStr(cur, 1))) {
+          cur = shiftDateStr(cur, 1);
+          len++;
+        }
+        longest = Math.max(longest, len);
+      }
+    });
+    return longest;
+  }
+
+  function renderStats() {
+    var todayKey = dateKey(new Date());
+    var todayMin = historyData[todayKey] || 0;
+    statToday.textContent = formatMinutesLong(todayMin);
+    var streak = computeCurrentStreak(historyData);
+    statStreak.textContent = (streak > 0 ? '🔥 ' : '') + streak + ' hari';
+    var best = computeLongestStreak(historyData);
+    statBest.textContent = best + ' hari';
+    var total = Object.values(historyData).reduce(function (a, b) { return a + b; }, 0);
+    statTotal.textContent = formatMinutesLong(total);
+  }
+
+  function levelForMinutes(min) {
+    if (!min || min <= 0) return 0;
+    if (min < 30) return 1;
+    if (min < 60) return 2;
+    if (min < 120) return 3;
+    return 4;
+  }
+
+  function buildDayList(weeksBack) {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var totalDays = weeksBack * 7;
+    var start = new Date(today);
+    start.setDate(start.getDate() - (totalDays - 1));
+    start.setDate(start.getDate() - mondayIndex(start));
+    var list = [];
+    var cur = new Date(start);
+    while (cur <= today) {
+      list.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return list;
+  }
+
+  function renderHeatmap() {
+    heatmapGrid.innerHTML = '';
+    heatmapMonths.innerHTML = '';
+    heatmapDayLabels.innerHTML = '';
+
+    DAY_LABELS.forEach(function (label, i) {
+      var el = document.createElement('div');
+      el.className = 'day-label';
+      el.textContent = SHOW_LABEL[i] ? label : '';
+      heatmapDayLabels.appendChild(el);
+    });
+
+    var dayList = buildDayList(53);
+    var lastMonth = -1;
+    var weekIndex = 0;
+    dayList.forEach(function (d) {
+      var dow = mondayIndex(d);
+      if (dow === 0) {
+        weekIndex++;
+        if (d.getMonth() !== lastMonth) {
+          lastMonth = d.getMonth();
+          var label = document.createElement('div');
+          label.className = 'month-label';
+          label.style.gridColumnStart = String(weekIndex);
+          label.textContent = MONTH_LABELS[d.getMonth()];
+          heatmapMonths.appendChild(label);
+        }
+      }
+      var key = dateKey(d);
+      var minutes = historyData[key] || 0;
+      var level = levelForMinutes(minutes);
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'heat-cell level-' + level;
+      cell.setAttribute('aria-label', tooltipText(d, minutes));
+      cell.addEventListener('mouseenter', function (e) { showTooltip(e, d, minutes); });
+      cell.addEventListener('mouseleave', hideTooltip);
+      cell.addEventListener('focus', function (e) { showTooltip(e, d, minutes); });
+      cell.addEventListener('blur', hideTooltip);
+      cell.addEventListener('click', function (e) { showTooltip(e, d, minutes); });
+      heatmapGrid.appendChild(cell);
+    });
+
+    requestAnimationFrame(function () {
+      heatmapScroll.scrollLeft = heatmapScroll.scrollWidth;
+    });
+  }
+
+  function saveLocal() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(historyData)); }
+    catch (e) { console.warn('local save failed', e); }
+  }
+
+  function loadHistory() {
+    try { historyData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch (e) { historyData = {}; }
+    renderHeatmap();
+    renderStats();
+  }
+
+  function persistHistory() {
+    saveLocal();
+  }
+
+  function exportHistory() {
+    var payload = {
+      app: 'lampu-belajar',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      days: historyData
+    };
+    try {
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'lampu-belajar-backup-' + dateKey(new Date()) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      showToast('Backup riwayat berhasil didownload.');
+    } catch (e) {
+      console.warn('export failed', e);
+      showToast('Gagal bikin file backup.');
+    }
+  }
+
+  function importHistoryFromFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var parsed = JSON.parse(e.target.result);
+        var incoming = (parsed && typeof parsed === 'object' && parsed.days) ? parsed.days : parsed;
+        if (!incoming || typeof incoming !== 'object') throw new Error('format tidak dikenali');
+        Object.keys(incoming).forEach(function (k) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+          var val = Number(incoming[k]) || 0;
+          historyData[k] = Math.max(historyData[k] || 0, val);
+        });
+        persistHistory();
+        renderHeatmap();
+        renderStats();
+        showToast('Riwayat dari backup berhasil digabung.');
+      } catch (err) {
+        console.warn('import failed', err);
+        showToast('Gagal baca file backup — pastikan filenya nggak diubah-ubah.');
+      }
+    };
+    reader.onerror = function () { showToast('Gagal baca file backup.'); };
+    reader.readAsText(file);
+  }
+
+  exportBtn.addEventListener('click', exportHistory);
+  importBtn.addEventListener('click', function () { importFile.click(); });
+  importFile.addEventListener('change', function () {
+    var file = importFile.files && importFile.files[0];
+    if (file) importHistoryFromFile(file);
+    importFile.value = '';
+  });
+
+  resetBtn.addEventListener('click', function () {
+    if (status !== 'idle') { showToast('Selesaikan sesi dulu sebelum reset ya.'); return; }
+    var ok = window.confirm('Yakin mau hapus semua riwayat belajar? Tindakan ini nggak bisa dibatalin.');
+    if (!ok) return;
+    historyData = {};
+    persistHistory();
+    renderHeatmap();
+    renderStats();
+    showToast('Riwayat berhasil direset.');
+  });
+
+  function selectPresetChip(chip) {
+    chips.forEach(function (c) { c.classList.remove('active'); });
+    customChip.classList.remove('active');
+    chip.classList.add('active');
+    customInputWrap.hidden = true;
+    selectedMinutes = parseInt(chip.dataset.minutes, 10);
+    if (status === 'idle') resetDisplayIdle();
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      if (status !== 'idle') { showToast('Selesaikan sesi dulu buat ganti durasi.'); return; }
+      selectPresetChip(chip);
+    });
+  });
+
+  customChip.addEventListener('click', function () {
+    if (status !== 'idle') { showToast('Selesaikan sesi dulu buat ganti durasi.'); return; }
+    chips.forEach(function (c) { c.classList.remove('active'); });
+    customChip.classList.add('active');
+    customInputWrap.hidden = false;
+    customInput.focus();
+  });
+
+  customInput.addEventListener('input', function () {
+    var v = parseInt(customInput.value, 10);
+    if (!isNaN(v)) {
+      v = Math.max(1, Math.min(180, v));
+      selectedMinutes = v;
+      if (status === 'idle') resetDisplayIdle();
+    }
+  });
+
+  startBtn.addEventListener('click', function () { startTimer(selectedMinutes); });
+  pauseBtn.addEventListener('click', pauseTimer);
+  resumeBtn.addEventListener('click', resumeTimer);
+  stopBtn.addEventListener('click', stopTimer);
+
+  ringProgress.style.strokeDasharray = CIRC.toFixed(2);
+  resetDisplayIdle();
+  updateControlsUI();
+  loadHistory();
+
+})();
+</script>
+</body>
+</html>
