@@ -529,6 +529,8 @@
     var msLeft = endTimestamp - Date.now();
     remainingSec = Math.max(0, Math.round(msLeft / 1000));
     updateDisplay();
+    renderStats();
+    updateTodayCellLive();
     if (remainingSec <= 0) completeSession();
   }
 
@@ -553,6 +555,8 @@
     statusLabel.textContent = 'Dijeda';
     timerCard.classList.remove('is-running');
     updateDisplay();
+    renderStats();
+    updateTodayCellLive();
     updateControlsUI();
   }
 
@@ -664,15 +668,37 @@
     return longest;
   }
 
+  function getLiveBonusMinutes() {
+    if (status === 'idle') return 0;
+    return Math.max(0, Math.floor((durationSec - remainingSec) / 60));
+  }
+
+  function getEffectiveMinutesFor(key) {
+    var base = historyData[key] || 0;
+    if (key === dateKey(new Date())) base += getLiveBonusMinutes();
+    return base;
+  }
+
+  function buildEffectiveHistory() {
+    var eff = Object.assign({}, historyData);
+    var bonus = getLiveBonusMinutes();
+    if (bonus > 0) {
+      var todayKey = dateKey(new Date());
+      eff[todayKey] = (eff[todayKey] || 0) + bonus;
+    }
+    return eff;
+  }
+
   function renderStats() {
+    var eff = buildEffectiveHistory();
     var todayKey = dateKey(new Date());
-    var todayMin = historyData[todayKey] || 0;
+    var todayMin = eff[todayKey] || 0;
     statToday.textContent = formatMinutesLong(todayMin);
-    var streak = computeCurrentStreak(historyData);
+    var streak = computeCurrentStreak(eff);
     statStreak.textContent = (streak > 0 ? '🔥 ' : '') + streak + ' hari';
-    var best = computeLongestStreak(historyData);
+    var best = computeLongestStreak(eff);
     statBest.textContent = best + ' hari';
-    var total = Object.values(historyData).reduce(function (a, b) { return a + b; }, 0);
+    var total = Object.values(eff).reduce(function (a, b) { return a + b; }, 0);
     statTotal.textContent = formatMinutesLong(total);
   }
 
@@ -729,23 +755,34 @@
         }
       }
       var key = dateKey(d);
-      var minutes = historyData[key] || 0;
+      var minutes = getEffectiveMinutesFor(key);
       var level = levelForMinutes(minutes);
       var cell = document.createElement('button');
       cell.type = 'button';
       cell.className = 'heat-cell level-' + level;
       cell.setAttribute('aria-label', tooltipText(d, minutes));
-      cell.addEventListener('mouseenter', function (e) { showTooltip(e, d, minutes); });
+      cell.addEventListener('mouseenter', function (e) { showTooltip(e, d, getEffectiveMinutesFor(key)); });
       cell.addEventListener('mouseleave', hideTooltip);
-      cell.addEventListener('focus', function (e) { showTooltip(e, d, minutes); });
+      cell.addEventListener('focus', function (e) { showTooltip(e, d, getEffectiveMinutesFor(key)); });
       cell.addEventListener('blur', hideTooltip);
-      cell.addEventListener('click', function (e) { showTooltip(e, d, minutes); });
+      cell.addEventListener('click', function (e) { showTooltip(e, d, getEffectiveMinutesFor(key)); });
       heatmapGrid.appendChild(cell);
     });
 
     requestAnimationFrame(function () {
       heatmapScroll.scrollLeft = heatmapScroll.scrollWidth;
     });
+  }
+
+  function updateTodayCellLive() {
+    var cells = heatmapGrid.querySelectorAll('.heat-cell');
+    if (!cells.length) return;
+    var todayCell = cells[cells.length - 1];
+    var todayDate = new Date();
+    var minutes = getEffectiveMinutesFor(dateKey(todayDate));
+    var level = levelForMinutes(minutes);
+    todayCell.className = 'heat-cell level-' + level;
+    todayCell.setAttribute('aria-label', tooltipText(todayDate, minutes));
   }
 
   function saveLocal() {
